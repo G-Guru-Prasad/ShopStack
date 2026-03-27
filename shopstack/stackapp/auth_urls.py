@@ -5,6 +5,7 @@ from stackapp.auth_views import (
     CustomTokenRefreshView,
     LoginView,
     LogoutView,
+    MeView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RegisterView,
@@ -18,4 +19,5 @@ urlpatterns = [
     path('change-password/', ChangePasswordView.as_view(), name='auth-change-password'),
     path('password-reset/', PasswordResetRequestView.as_view(), name='auth-password-reset'),
     path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='auth-password-reset-confirm'),
+    path('me/', MeView.as_view(), name='auth-me'),
 ]

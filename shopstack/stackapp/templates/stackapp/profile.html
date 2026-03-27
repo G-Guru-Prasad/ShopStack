@@ -1,0 +1,95 @@
+{% extends "stackapp/base.html" %}
+{% load static %}
+
+{% block title %}Profile — ShopStack{% endblock %}
+
+{% block content %}
+<div class="row">
+  <div class="col s12 m8 offset-m2">
+
+    <!-- Profile info card -->
+    <div class="card z-depth-1" style="margin-bottom: 24px;">
+      <div class="card-content">
+        <span class="card-title">
+          <i class="material-icons left teal-text text-darken-2">account_circle</i>My Profile
+        </span>
+
+        <!-- Preloader -->
+        <div id="profile-preloader" class="center-align" style="padding: 24px 0;">
+          <div class="preloader-wrapper small active">
+            <div class="spinner-layer spinner-teal-only">
+              <div class="circle-clipper left"><div class="circle"></div></div>
+              <div class="gap-patch"><div class="circle"></div></div>
+              <div class="circle-clipper right"><div class="circle"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <dl id="profile-dl" style="display:none;">
+          <dt class="grey-text text-darken-1" style="font-size:0.85rem; margin-top:12px;">Username</dt>
+          <dd id="profile-username" class="teal-text text-darken-2" style="font-size:1rem; margin-left:0;"></dd>
+
+          <dt class="grey-text text-darken-1" style="font-size:0.85rem; margin-top:12px;">Email</dt>
+          <dd id="profile-email" class="teal-text text-darken-2" style="font-size:1rem; margin-left:0;"></dd>
+
+          <dt class="grey-text text-darken-1" style="font-size:0.85rem; margin-top:12px;">First Name</dt>
+          <dd id="profile-first-name" class="teal-text text-darken-2" style="font-size:1rem; margin-left:0;"></dd>
+
+          <dt class="grey-text text-darken-1" style="font-size:0.85rem; margin-top:12px;">Last Name</dt>
+          <dd id="profile-last-name" class="teal-text text-darken-2" style="font-size:1rem; margin-left:0;"></dd>
+        </dl>
+      </div>
+    </div>
+
+    <!-- Change Password card -->
+    <div class="card z-depth-1">
+      <div class="card-content">
+        <span class="card-title">
+          <i class="material-icons left teal-text text-darken-2">lock</i>Change Password
+        </span>
+
+        <form id="change-password-form" novalidate>
+
+          <!-- Current Password -->
+          <div class="input-field">
+            <input id="current-password" type="password" autocomplete="current-password">
+            <label for="current-password">Current Password</label>
+            <i class="material-icons suffix pwd-toggle" data-target="current-password"
+               style="cursor:pointer;" aria-label="Show/hide password">visibility</i>
+            <span class="helper-text red-text" id="current-password-error" aria-live="polite"></span>
+          </div>
+
+          <!-- New Password -->
+          <div class="input-field">
+            <input id="new-password" type="password" autocomplete="new-password">
+            <label for="new-password">New Password</label>
+            <i class="material-icons suffix pwd-toggle" data-target="new-password"
+               style="cursor:pointer;" aria-label="Show/hide password">visibility</i>
+            <span class="helper-text red-text" id="new-password-error" aria-live="polite"></span>
+          </div>
+
+          <!-- Confirm New Password -->
+          <div class="input-field">
+            <input id="confirm-password" type="password" autocomplete="new-password">
+            <label for="confirm-password">Confirm New Password</label>
+            <i class="material-icons suffix pwd-toggle" data-target="confirm-password"
+               style="cursor:pointer;" aria-label="Show/hide password">visibility</i>
+            <span class="helper-text red-text" id="confirm-password-error" aria-live="polite"></span>
+          </div>
+
+          <button id="change-pwd-btn" type="submit"
+                  class="btn teal darken-2 waves-effect waves-light" style="margin-top: 8px;">
+            Change Password
+          </button>
+
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'stackapp/js/profile.js' %}"></script>
+{% endblock %}

@@ -585,3 +585,37 @@ class TenantMembershipTest(AuthTestBase):
         self.user.delete()
         resp = self.get('/api/cart/', auth=self.auth_header)
         self.assertEqual(resp.status_code, 401)
+
+
+# ===========================================================================
+# MeView tests
+# ===========================================================================
+
+class MeViewTest(AuthTestBase):
+
+    def test_me_authenticated_returns_user_fields(self):
+        """Authenticated request returns id, username, email, first_name, last_name."""
+        self.user.first_name = 'Test'
+        self.user.last_name = 'User'
+        self.user.save()
+        resp = self.get('/api/auth/me/', auth=self.auth_header)
+        self.assertEqual(resp.status_code, 200)
+        data = resp.json()
+        self.assertEqual(data['id'], self.user.id)
+        self.assertEqual(data['username'], 'testuser')
+        self.assertEqual(data['email'], 'test@acme.com')
+        self.assertEqual(data['first_name'], 'Test')
+        self.assertEqual(data['last_name'], 'User')
+
+    def test_me_unauthenticated_returns_401(self):
+        """No token → 401."""
+        resp = self.get('/api/auth/me/')
+        self.assertEqual(resp.status_code, 401)
+
+    def test_me_returns_only_own_data(self):
+        """Authenticated user only sees their own record."""
+        other = User.objects.create_user(username='other', password='OtherPass1!')
+        resp = self.get('/api/auth/me/', auth=self.auth_header)
+        data = resp.json()
+        self.assertNotEqual(data['id'], other.id)
+        self.assertEqual(data['username'], 'testuser')

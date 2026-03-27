@@ -151,6 +151,11 @@ REST_FRAMEWORK = {
     },
 }
 
+# Security headers
+SECURE_CONTENT_TYPE_NOSNIFF = True
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'Lax'
+
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),

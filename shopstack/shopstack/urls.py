@@ -20,4 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('stackapp.urls')),
     path('api/auth/', include('stackapp.auth_urls')),
+    path('', include('stackapp.page_urls')),
 ]

@@ -102,6 +102,20 @@ class PasswordResetRequestView(APIView):
         )
 
 
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        u = request.user
+        return Response({
+            'id': u.id,
+            'username': u.username,
+            'email': u.email,
+            'first_name': u.first_name,
+            'last_name': u.last_name,
+        })
+
+
 class PasswordResetConfirmView(APIView):
     permission_classes = [AllowAny]
     throttle_scope = 'auth'

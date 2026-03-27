@@ -1,0 +1,98 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}ShopStack{% endblock %}</title>
+
+  <!-- Materialize CSS -->
+  <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css"
+        integrity="sha512-UJfAaOlIRtdR+0P6C3KUoTDAxVTuy3lnSXLyLKlHYJlcSU8Juge/mjeaxDNMlw9LgeIotgz5FP8eUQPhX1q10A=="
+        crossorigin="anonymous">
+
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+  <style>
+    body { display: flex; min-height: 100vh; flex-direction: column; background-color: #fafafa; }
+    main { flex: 1; padding-top: 80px; }
+    .brand-logo { font-weight: 600; letter-spacing: 1px; }
+    nav .nav-wrapper a { font-size: 0.95rem; }
+    .sidenav li > a { color: #333; }
+    footer { background-color: #37474f; color: #cfd8dc; padding: 16px 0; text-align: center; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+  {% block navbar %}
+  <!-- Fixed top navbar -->
+  <div class="navbar-fixed">
+    <nav class="teal darken-2">
+      <div class="nav-wrapper container">
+        <a href="/dashboard/" class="brand-logo">ShopStack</a>
+
+        <!-- Hamburger trigger (mobile) -->
+        <a href="#mobile-nav" data-target="mobile-nav" class="sidenav-trigger right">
+          <i class="material-icons">menu</i>
+        </a>
+
+        <!-- Desktop nav links -->
+        <ul class="right hide-on-med-and-down" id="desktop-nav">
+          {% block nav_links %}
+          <li><a href="/dashboard/"><i class="material-icons left">dashboard</i>Dashboard</a></li>
+          <li><a href="/profile/"><i class="material-icons left">person</i>Profile</a></li>
+          <li><a href="#!" id="logout-btn"><i class="material-icons left">exit_to_app</i>Logout</a></li>
+          {% endblock nav_links %}
+        </ul>
+      </div>
+    </nav>
+  </div>
+
+  <!-- Mobile sidenav -->
+  <ul class="sidenav" id="mobile-nav">
+    <li class="sidenav-close">
+      <div class="user-view" style="background:#00695c; padding:16px;">
+        <p class="white-text" style="margin:0; font-weight:600;">ShopStack</p>
+      </div>
+    </li>
+    {% block mobile_nav_links %}
+    <li><a href="/dashboard/"><i class="material-icons">dashboard</i>Dashboard</a></li>
+    <li><a href="/profile/"><i class="material-icons">person</i>Profile</a></li>
+    <li><a href="#!" id="logout-btn-mobile"><i class="material-icons">exit_to_app</i>Logout</a></li>
+    {% endblock mobile_nav_links %}
+  </ul>
+  {% endblock navbar %}
+
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <span>&copy; 2026 ShopStack</span>
+  </footer>
+
+  <!-- Materialize JS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"
+          integrity="sha512-NiWqa2rceHnN3Z5j6mSAvbwwg3tiwVNxiAQaaSMSXnRRDh5C2mk/+sKQRw8qjV1vN4nf8iK2a0b048PnHbyx+Q=="
+          crossorigin="anonymous"></script>
+
+  <!-- Shared auth utilities -->
+  <script src="{% static 'stackapp/js/auth.js' %}"></script>
+
+  <script>
+    // Initialise Materialize sidenav
+    M.Sidenav.init(document.querySelectorAll('.sidenav'));
+
+    // Logout buttons
+    var logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) { logoutBtn.addEventListener('click', function (e) { e.preventDefault(); logout(); }); }
+    var logoutBtnMobile = document.getElementById('logout-btn-mobile');
+    if (logoutBtnMobile) { logoutBtnMobile.addEventListener('click', function (e) { e.preventDefault(); logout(); }); }
+  </script>
+
+  {% block extra_js %}{% endblock %}
+
+</body>
+</html>
