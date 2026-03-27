@@ -87,3 +87,10 @@ Views read `user_id` and `tenant_id` directly from `ThreadVaribales()` — they 
 - Tenant identification: subdomain — `ALLOWED_HOSTS` includes `.localhost` wildcard for local dev
 - `DEBUG=True` and hardcoded `SECRET_KEY` — development only
 - DRF configured with `AllowAny` permissions and `PageNumberPagination` (20 per page)
+
+
+### TESTS
+
+- Make sure all the test cases running uses a different test database
+- All test cases should have asserts to make sure data integrity
+- All test case running command should use keepdb always unless, there's model field change

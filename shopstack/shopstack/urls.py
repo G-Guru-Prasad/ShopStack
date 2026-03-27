@@ -19,4 +19,5 @@ from django.urls import include, path
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('stackapp.urls')),
+    path('api/auth/', include('stackapp.auth_urls')),
 ]

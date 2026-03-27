@@ -1,9 +1,11 @@
 from django.db import transaction
 from rest_framework import generics, status
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from stackapp.models import Cart, CartItem, Category, Order, OrderItem, Payment, Product
+from stackapp.permissions import IsTenantMember
 from stackapp.serializers import (
     CartItemSerializer,
     CartSerializer,
@@ -21,11 +23,15 @@ from stackapp.utils import ThreadVaribales
 
 class CategoryListView(generics.ListAPIView):
     serializer_class = CategorySerializer
-    queryset = Category.objects.all()
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        return Category.objects.all()
 
 
 class ProductListView(generics.ListAPIView):
     serializer_class = ProductListSerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         qs = Product.objects.filter(is_active=True)
@@ -37,12 +43,15 @@ class ProductListView(generics.ListAPIView):
 
 class ProductDetailView(generics.RetrieveAPIView):
     serializer_class = ProductDetailSerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
         return Product.objects.filter(is_active=True).prefetch_related('variants')
 
 
 class CartView(APIView):
+    permission_classes = [IsAuthenticated, IsTenantMember]
+
     def _get_or_create_cart(self, user_id, tenant_id):
         cart = Cart.objects.filter(user_id=user_id, is_active=True).first()
         if not cart:
@@ -64,6 +73,7 @@ class CartView(APIView):
 
 class CartItemCreateView(generics.CreateAPIView):
     serializer_class = CartItemSerializer
+    permission_classes = [IsAuthenticated, IsTenantMember]
 
     def perform_create(self, serializer):
         user_id   = ThreadVaribales().get_val('user_id')
@@ -74,11 +84,16 @@ class CartItemCreateView(generics.CreateAPIView):
 
 class CartItemDetailView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class  = CartItemSerializer
-    queryset          = CartItem.objects.all()
     http_method_names = ['patch', 'delete']
+    permission_classes = [IsAuthenticated, IsTenantMember]
+
+    def get_queryset(self):
+        return CartItem.objects.all()
 
 
 class OrderListCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsTenantMember]
+
     def get(self, request):
         orders = Order.objects.all().order_by('-placed_at')
         return Response(OrderListSerializer(orders, many=True).data)
@@ -131,12 +146,15 @@ class OrderListCreateView(APIView):
 
 class OrderDetailView(generics.RetrieveAPIView):
     serializer_class = OrderDetailSerializer
+    permission_classes = [IsAuthenticated, IsTenantMember]
 
     def get_queryset(self):
         return Order.objects.all().prefetch_related('items').select_related('address')
 
 
 class PaymentListCreateView(APIView):
+    permission_classes = [IsAuthenticated, IsTenantMember]
+
     def get(self, request):
         qs = Payment.objects.select_related('order').order_by('-created_at')
         order_id = request.query_params.get('order_id')
