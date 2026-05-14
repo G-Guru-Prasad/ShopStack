@@ -16,3 +16,15 @@ class DashboardPageView(TemplateView):
 
 class ProfilePageView(TemplateView):
     template_name = 'stackapp/profile.html'
+
+
+class ProductListPageView(TemplateView):
+    template_name = 'stackapp/product_list.html'
+
+
+class ProductCreatePageView(TemplateView):
+    template_name = 'stackapp/product_create.html'
+
+
+class ResetPasswordPageView(TemplateView):
+    template_name = 'stackapp/reset_password.html'

@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from stackapp.models import Address, Cart, CartItem, Category, Order, OrderItem, Product, ProductVariant, Tenant
+from stackapp.models import Address, Cart, CartItem, Category, Order, OrderItem, Product, ProductVariant, Tenant, TenantUser
 
 
 @admin.register(Tenant)
@@ -84,3 +84,10 @@ class OrderAdmin(admin.ModelAdmin):
 class OrderItemAdmin(admin.ModelAdmin):
     list_display = ('id', 'order', 'product_variant', 'quantity', 'unit_price')
     search_fields = ('order__id', 'product_variant__name')
+
+
+@admin.register(TenantUser)
+class TenantUserAdmin(admin.ModelAdmin):
+    list_display = ('id', 'tenant', 'user')
+    list_filter = ('tenant',)
+    search_fields = ('user__username',)

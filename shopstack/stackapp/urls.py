@@ -4,9 +4,11 @@ from stackapp import views
 
 urlpatterns = [
     # Catalog
-    path('products/', views.ProductListView.as_view(), name='product-list'),
-    path('products/<int:pk>/', views.ProductDetailView.as_view(), name='product-detail'),
-    path('categories/', views.CategoryListView.as_view(), name='category-list'),
+    path('products/', views.ProductListCreateView.as_view(), name='product-list-create'),
+    path('products/<int:pk>/', views.ProductDetailUpdateView.as_view(), name='product-detail-update'),
+    path('categories/', views.CategoryListCreateView.as_view(), name='category-list-create'),
+    path('products/<int:product_pk>/variants/', views.ProductVariantListCreateView.as_view(), name='product-variant-list-create'),
+    path('products/<int:product_pk>/variants/<int:pk>/', views.ProductVariantUpdateDeleteView.as_view(), name='product-variant-detail'),
 
     # Cart
     path('cart/', views.CartView.as_view(), name='cart'),

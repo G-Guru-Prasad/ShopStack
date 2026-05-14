@@ -1,0 +1,133 @@
+{% extends "stackapp/base.html" %}
+{% load static %}
+
+{% block title %}Products — ShopStack{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+
+<div class="row" style="margin-bottom: 8px;">
+  <div class="col s6">
+    <h5 class="teal-text text-darken-2">
+      <i class="material-icons left">inventory_2</i>Products
+    </h5>
+  </div>
+  <div class="col s6 right-align">
+    <a href="/products/create/" class="btn teal darken-2 waves-effect waves-light">
+      <i class="material-icons left">add</i>Create Product
+    </a>
+  </div>
+</div>
+
+<!-- Search & filter -->
+<div class="row" style="margin-bottom: 0;">
+  <div class="input-field col s12 m6">
+    <i class="material-icons prefix">search</i>
+    <input id="search-input" type="text">
+    <label for="search-input">Search products...</label>
+  </div>
+  <div class="input-field col s12 m4">
+    <select id="category-filter">
+      <option value="" selected>All Categories</option>
+    </select>
+    <label>Filter by Category</label>
+  </div>
+</div>
+
+<!-- Products table -->
+<div class="card z-depth-1">
+  <div class="card-content">
+    <!-- Preloader -->
+    <div id="products-preloader" class="center-align" style="padding: 24px 0;">
+      <div class="preloader-wrapper small active">
+        <div class="spinner-layer spinner-teal-only">
+          <div class="circle-clipper left"><div class="circle"></div></div>
+          <div class="gap-patch"><div class="circle"></div></div>
+          <div class="circle-clipper right"><div class="circle"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="products-table-wrap" style="display:none; overflow-x:auto;">
+      <table class="striped responsive-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Category</th>
+            <th>Active</th>
+            <th>Variants</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="products-tbody"></tbody>
+      </table>
+    </div>
+
+    <p id="no-products-msg" style="display:none;" class="grey-text center-align">
+      No products found. <a href="/products/create/">Create one</a>.
+    </p>
+  </div>
+</div>
+
+<!-- Edit Product Modal -->
+<div id="edit-product-modal" class="modal modal-fixed-footer">
+  <div class="modal-content">
+    <h5>Edit Product</h5>
+    <form id="edit-product-form" novalidate>
+      <input type="hidden" id="edit-product-id">
+      <div class="row" style="margin-bottom:0;">
+        <div class="input-field col s12">
+          <input id="edit-name" type="text">
+          <label for="edit-name">Product Name *</label>
+        </div>
+      </div>
+      <div class="row" style="margin-bottom:0;">
+        <div class="input-field col s12">
+          <textarea id="edit-description" class="materialize-textarea"></textarea>
+          <label for="edit-description">Description</label>
+        </div>
+      </div>
+      <div class="row" style="margin-bottom:0;">
+        <div class="input-field col s6">
+          <input id="edit-price" type="number" step="0.01" min="0">
+          <label for="edit-price">Price *</label>
+        </div>
+        <div class="input-field col s6">
+          <select id="edit-category">
+            <option value="">No Category</option>
+          </select>
+          <label>Category</label>
+        </div>
+      </div>
+      <div class="row" style="margin-bottom:0;">
+        <div class="col s12">
+          <label>
+            <input id="edit-active" type="checkbox">
+            <span>Active</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Variants in modal -->
+      <h6 style="margin-top:24px;">Variants</h6>
+      <div id="edit-variants-container"></div>
+      <div style="margin-top: 8px;">
+        <a id="edit-add-variant-btn" class="btn-flat teal-text text-darken-2 waves-effect">
+          <i class="material-icons left">add</i>Add Variant
+        </a>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+    <a id="edit-save-btn" class="btn teal darken-2 waves-effect waves-light">
+      <i class="material-icons left">save</i>Save
+    </a>
+    <a class="modal-close btn-flat waves-effect" style="margin-left:8px;">Cancel</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'stackapp/js/product_list.js' %}"></script>
+{% endblock %}

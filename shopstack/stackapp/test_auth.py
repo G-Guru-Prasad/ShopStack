@@ -10,17 +10,19 @@ Covers every auth endpoint and verifies:
 - Rate-limiting scope assignments
 """
 import json
+from datetime import timedelta
 
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.cache import cache
 from django.test import TestCase
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from stackapp.models import (
-    Cart, Category, Product, ProductVariant,
+    Cart, Category, PasswordResetOTP, Product, ProductVariant,
     Tenant, TenantUser,
 )
 from stackapp.utils import ThreadVaribales
@@ -619,3 +621,224 @@ class MeViewTest(AuthTestBase):
         data = resp.json()
         self.assertNotEqual(data['id'], other.id)
         self.assertEqual(data['username'], 'testuser')
+
+
+# ===========================================================================
+# OTP-based Forgot Password tests
+# ===========================================================================
+
+class ForgotPasswordOTPTest(AuthTestBase):
+
+    def _request_otp(self):
+        """Trigger a forgot-password request and return the OTP DB record."""
+        self.post('/api/auth/forgot-password/', {'email': 'test@acme.com'})
+        return PasswordResetOTP.objects.filter(
+            user=self.user, tenant=self.tenant, is_used=False,
+        ).latest('created_at')
+
+    def _verify_otp(self, record):
+        """Submit the OTP and return the reset_token string."""
+        resp = self.post('/api/auth/forgot-password/verify/', {
+            'email': 'test@acme.com',
+            'otp': record.otp,
+        })
+        return resp.json()['reset_token']
+
+    # --- Request endpoint ---
+
+    def test_request_returns_200_for_valid_email(self):
+        resp = self.post('/api/auth/forgot-password/', {'email': 'test@acme.com'})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_request_returns_200_for_unknown_email(self):
+        """Must not leak whether email is registered (anti-enumeration)."""
+        resp = self.post('/api/auth/forgot-password/', {'email': 'nobody@example.com'})
+        self.assertEqual(resp.status_code, 200)
+
+    def test_request_creates_otp_record(self):
+        self.post('/api/auth/forgot-password/', {'email': 'test@acme.com'})
+        self.assertEqual(
+            PasswordResetOTP.objects.filter(
+                user=self.user, tenant=self.tenant, is_used=False,
+            ).count(),
+            1,
+        )
+
+    def test_request_otp_expires_at_10_minutes(self):
+        record = self._request_otp()
+        delta = record.expires_at - record.created_at
+        self.assertAlmostEqual(delta.total_seconds(), 600, delta=5)
+
+    def test_request_invalidates_previous_otp(self):
+        self._request_otp()
+        first = PasswordResetOTP.objects.filter(
+            user=self.user, tenant=self.tenant,
+        ).latest('created_at')
+        self._request_otp()
+        first.refresh_from_db()
+        self.assertTrue(first.is_used)
+
+    # --- Verify endpoint ---
+
+    def test_verify_returns_reset_token_on_correct_otp(self):
+        record = self._request_otp()
+        resp = self.post('/api/auth/forgot-password/verify/', {
+            'email': 'test@acme.com',
+            'otp': record.otp,
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertIn('reset_token', resp.json())
+
+    def test_verify_sets_is_otp_verified(self):
+        record = self._request_otp()
+        self._verify_otp(record)
+        record.refresh_from_db()
+        self.assertTrue(record.is_otp_verified)
+
+    def test_verify_wrong_otp_returns_400(self):
+        self._request_otp()
+        resp = self.post('/api/auth/forgot-password/verify/', {
+            'email': 'test@acme.com',
+            'otp': '000000',
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    def test_verify_wrong_otp_increments_attempt_count(self):
+        record = self._request_otp()
+        self.post('/api/auth/forgot-password/verify/', {
+            'email': 'test@acme.com',
+            'otp': '000000',
+        })
+        record.refresh_from_db()
+        self.assertEqual(record.attempt_count, 1)
+
+    def test_verify_locked_after_3_wrong_attempts(self):
+        record = self._request_otp()
+        for _ in range(3):
+            self.post('/api/auth/forgot-password/verify/', {
+                'email': 'test@acme.com',
+                'otp': '000000',
+            })
+        # Correct OTP must still be rejected after lockout
+        resp = self.post('/api/auth/forgot-password/verify/', {
+            'email': 'test@acme.com',
+            'otp': record.otp,
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('Too many', resp.json()['detail'])
+
+    def test_verify_expired_otp_returns_400(self):
+        record = self._request_otp()
+        record.expires_at = timezone.now() - timedelta(minutes=1)
+        record.save(update_fields=['expires_at'])
+        resp = self.post('/api/auth/forgot-password/verify/', {
+            'email': 'test@acme.com',
+            'otp': record.otp,
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('expired', resp.json()['detail'])
+
+    def test_verify_unknown_email_returns_400(self):
+        resp = self.post('/api/auth/forgot-password/verify/', {
+            'email': 'nobody@example.com',
+            'otp': '123456',
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    # --- Confirm endpoint ---
+
+    def test_confirm_resets_password(self):
+        record = self._request_otp()
+        reset_token = self._verify_otp(record)
+        resp = self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': reset_token,
+            'new_password': 'NewOTPPass1!',
+            'new_password_confirm': 'NewOTPPass1!',
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.user.refresh_from_db()
+        self.assertTrue(self.user.check_password('NewOTPPass1!'))
+
+    def test_confirm_marks_otp_as_used(self):
+        record = self._request_otp()
+        reset_token = self._verify_otp(record)
+        self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': reset_token,
+            'new_password': 'NewOTPPass1!',
+            'new_password_confirm': 'NewOTPPass1!',
+        })
+        record.refresh_from_db()
+        self.assertTrue(record.is_used)
+
+    def test_confirm_token_cannot_be_reused(self):
+        record = self._request_otp()
+        reset_token = self._verify_otp(record)
+        self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': reset_token,
+            'new_password': 'NewOTPPass1!',
+            'new_password_confirm': 'NewOTPPass1!',
+        })
+        resp = self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': reset_token,
+            'new_password': 'AnotherPass2!',
+            'new_password_confirm': 'AnotherPass2!',
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    def test_confirm_invalid_token_returns_400(self):
+        resp = self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': 'notarealtoken',
+            'new_password': 'NewOTPPass1!',
+            'new_password_confirm': 'NewOTPPass1!',
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    def test_confirm_expired_token_returns_400(self):
+        record = self._request_otp()
+        reset_token = self._verify_otp(record)
+        record.expires_at = timezone.now() - timedelta(minutes=1)
+        record.save(update_fields=['expires_at'])
+        resp = self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': reset_token,
+            'new_password': 'NewOTPPass1!',
+            'new_password_confirm': 'NewOTPPass1!',
+        })
+        self.assertEqual(resp.status_code, 400)
+        self.assertIn('expired', resp.json()['detail'])
+
+    def test_confirm_password_mismatch_returns_400(self):
+        record = self._request_otp()
+        reset_token = self._verify_otp(record)
+        resp = self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': reset_token,
+            'new_password': 'NewOTPPass1!',
+            'new_password_confirm': 'DifferentPass2!',
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    def test_confirm_weak_password_returns_400(self):
+        record = self._request_otp()
+        reset_token = self._verify_otp(record)
+        resp = self.post('/api/auth/forgot-password/confirm/', {
+            'reset_token': reset_token,
+            'new_password': '123',
+            'new_password_confirm': '123',
+        })
+        self.assertEqual(resp.status_code, 400)
+
+    def test_request_scoped_to_tenant(self):
+        """A user registered only on another tenant gets no OTP on this tenant."""
+        other_tenant = Tenant.objects.create(
+            id='beta', name='Beta Corp', subdomain='beta',
+        )
+        other_user = User.objects.create_user(
+            username='betauser', email='beta@beta.com', password='BetaPass1!',
+        )
+        TenantUser.objects.create(tenant=other_tenant, user=other_user)
+        resp = self.post('/api/auth/forgot-password/', {'email': 'beta@beta.com'})
+        self.assertEqual(resp.status_code, 200)
+        self.assertFalse(
+            PasswordResetOTP.objects.filter(
+                user=other_user, tenant=self.tenant,
+            ).exists()
+        )

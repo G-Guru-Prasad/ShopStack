@@ -196,6 +196,43 @@ class TenantUser(models.Model):
         return f"{self.user.username} @ {self.tenant_id}"
 
 
+class PasswordResetOTP(models.Model):
+    user            = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='password_reset_otps',
+    )
+    tenant          = models.ForeignKey(
+        'Tenant',
+        on_delete=models.CASCADE,
+        related_name='password_reset_otps',
+    )
+    otp             = models.CharField(max_length=6)
+    reset_token     = models.CharField(max_length=64, null=True, blank=True)
+    created_at      = models.DateTimeField(auto_now_add=True)
+    expires_at      = models.DateTimeField()
+    is_used         = models.BooleanField(default=False)
+    is_otp_verified = models.BooleanField(default=False)
+    attempt_count   = models.IntegerField(default=0)
+
+    class Meta:
+        db_table = 'password_reset_otps'
+        indexes = [
+            models.Index(fields=['user', 'tenant', 'is_used']),
+            models.Index(fields=['reset_token']),
+        ]
+
+    def is_expired(self):
+        from django.utils import timezone
+        return timezone.now() > self.expires_at
+
+    def is_valid(self):
+        return not self.is_used and not self.is_expired()
+
+    def __str__(self):
+        return f"OTP for {self.user_id} @ {self.tenant_id}"
+
+
 class Payment(TenantBaseModel):
     class Status(models.TextChoices):
         PENDING  = 'PENDING',  'Pending'

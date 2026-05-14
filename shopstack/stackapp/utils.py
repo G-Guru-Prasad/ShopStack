@@ -64,6 +64,7 @@ class TenantBasedManager(models.Manager):
 
     def get_queryset(self, *args, **kwargs):
         """Override get queryset method."""
+        print('ThreadVaribales().get_current_tenant_id()', ThreadVaribales().get_current_tenant_id())
         return super().get_queryset(*args, **kwargs).filter(
             tenant_id=ThreadVaribales().get_current_tenant_id(),
             deleted_at__isnull=True,

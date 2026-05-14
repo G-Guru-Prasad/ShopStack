@@ -27,11 +27,17 @@ SECRET_KEY = 'django-insecure-q=*e(2gq+zj-40eip!pcxwe=&bk&)bdu78obpxhx8mzw69aait
 DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.localhost']
+CORS_ALLOW_CREDENTIALS = True
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
 # Application definition
 
 INSTALLED_APPS = [
+    "corsheaders",
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -45,6 +51,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'stackapp.middleware.TenantMiddleware',
@@ -148,6 +155,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'auth': '10/minute',
+        'forgot_password': '10/hour',
     },
 }
 
@@ -155,6 +163,8 @@ REST_FRAMEWORK = {
 SECURE_CONTENT_TYPE_NOSNIFF = True
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
+
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),

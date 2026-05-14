@@ -1,10 +1,11 @@
 from django.db import transaction
+from django.utils import timezone
 from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from stackapp.models import Cart, CartItem, Category, Order, OrderItem, Payment, Product
+from stackapp.models import Cart, CartItem, Category, Order, OrderItem, Payment, Product, ProductVariant
 from stackapp.permissions import IsTenantMember
 from stackapp.serializers import (
     CartItemSerializer,
@@ -17,36 +18,107 @@ from stackapp.serializers import (
     PlaceOrderSerializer,
     ProductDetailSerializer,
     ProductListSerializer,
+    ProductVariantSerializer,
 )
 from stackapp.utils import ThreadVaribales
 
 
-class CategoryListView(generics.ListAPIView):
+class CategoryListCreateView(generics.ListCreateAPIView):
     serializer_class = CategorySerializer
-    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated(), IsTenantMember()]
 
     def get_queryset(self):
         return Category.objects.all()
 
+    def perform_create(self, serializer):
+        tenant_id = ThreadVaribales().get_current_tenant_id()
+        user_id = ThreadVaribales().get_val('user_id')
+        serializer.save(tenant_id=tenant_id, created_by_id=user_id)
 
-class ProductListView(generics.ListAPIView):
+
+class ProductListCreateView(generics.ListCreateAPIView):
     serializer_class = ProductListSerializer
-    permission_classes = [AllowAny]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated(), IsTenantMember()]
 
     def get_queryset(self):
-        qs = Product.objects.filter(is_active=True)
+        qs = Product.objects.all()
+        if not self.request.query_params.get('all'):
+            qs = qs.filter(is_active=True)
         category_id = self.request.query_params.get('category')
         if category_id:
             qs = qs.filter(category_id=category_id)
+        search = self.request.query_params.get('search')
+        if search:
+            qs = qs.filter(name__icontains=search)
         return qs
 
+    def perform_create(self, serializer):
+        tenant_id = ThreadVaribales().get_current_tenant_id()
+        user_id = ThreadVaribales().get_val('user_id')
+        serializer.save(tenant_id=tenant_id, created_by_id=user_id)
 
-class ProductDetailView(generics.RetrieveAPIView):
+
+class ProductDetailUpdateView(generics.RetrieveUpdateAPIView):
     serializer_class = ProductDetailSerializer
-    permission_classes = [AllowAny]
+    http_method_names = ['get', 'patch']
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated(), IsTenantMember()]
 
     def get_queryset(self):
-        return Product.objects.filter(is_active=True).prefetch_related('variants')
+        qs = Product.objects.all().prefetch_related('variants')
+        if self.request.method == 'GET' and not self.request.query_params.get('all'):
+            qs = qs.filter(is_active=True)
+        return qs
+
+    def get_serializer_class(self):
+        if self.request.method == 'PATCH':
+            return ProductListSerializer
+        return ProductDetailSerializer
+
+    def perform_update(self, serializer):
+        user_id = ThreadVaribales().get_val('user_id')
+        serializer.save(modified_by_id=user_id)
+
+
+class ProductVariantListCreateView(generics.ListCreateAPIView):
+    serializer_class = ProductVariantSerializer
+    permission_classes = [IsAuthenticated, IsTenantMember]
+
+    def get_queryset(self):
+        return ProductVariant.objects.filter(product_id=self.kwargs['product_pk'])
+
+    def perform_create(self, serializer):
+        tenant_id = ThreadVaribales().get_current_tenant_id()
+        user_id = ThreadVaribales().get_val('user_id')
+        serializer.save(
+            product_id=self.kwargs['product_pk'],
+            tenant_id=tenant_id,
+            created_by_id=user_id,
+        )
+
+
+class ProductVariantUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = ProductVariantSerializer
+    http_method_names = ['patch', 'delete']
+    permission_classes = [IsAuthenticated, IsTenantMember]
+
+    def get_queryset(self):
+        return ProductVariant.objects.filter(product_id=self.kwargs['product_pk'])
+
+    def perform_destroy(self, instance):
+        instance.deleted_at = timezone.now()
+        instance.save(update_fields=['deleted_at'])
 
 
 class CartView(APIView):

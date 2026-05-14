@@ -3,6 +3,9 @@ from django.urls import path
 from stackapp.auth_views import (
     ChangePasswordView,
     CustomTokenRefreshView,
+    ForgotPasswordConfirmView,
+    ForgotPasswordRequestView,
+    ForgotPasswordVerifyView,
     LoginView,
     LogoutView,
     MeView,
@@ -20,4 +23,7 @@ urlpatterns = [
     path('password-reset/', PasswordResetRequestView.as_view(), name='auth-password-reset'),
     path('password-reset/confirm/', PasswordResetConfirmView.as_view(), name='auth-password-reset-confirm'),
     path('me/', MeView.as_view(), name='auth-me'),
+    path('forgot-password/', ForgotPasswordRequestView.as_view(), name='auth-forgot-password'),
+    path('forgot-password/verify/', ForgotPasswordVerifyView.as_view(), name='auth-forgot-password-verify'),
+    path('forgot-password/confirm/', ForgotPasswordConfirmView.as_view(), name='auth-forgot-password-confirm'),
 ]

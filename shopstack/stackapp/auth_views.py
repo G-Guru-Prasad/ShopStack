@@ -1,5 +1,11 @@
+import random
+import uuid
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import status
@@ -13,10 +19,16 @@ from rest_framework_simplejwt.views import TokenRefreshView as BaseTokenRefreshV
 
 from stackapp.auth_serializers import (
     ChangePasswordSerializer,
+    ForgotPasswordConfirmSerializer,
+    ForgotPasswordRequestSerializer,
+    ForgotPasswordVerifySerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
 )
+from stackapp.models import PasswordResetOTP, TenantUser
+from stackapp.throttles import ForgotPasswordThrottle
+from stackapp.utils import ThreadVaribales
 
 
 class RegisterView(APIView):
@@ -124,7 +136,8 @@ class PasswordResetConfirmView(APIView):
         serializer = PasswordResetConfirmSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            uid = force_str(urlsafe_base64_decode(serializer.validated_data['uid']))
+            uid = force_str(urlsafe_base64_decode(
+                serializer.validated_data['uid']))
             user = User.objects.get(pk=uid)
         except (TypeError, ValueError, OverflowError, User.DoesNotExist):
             return Response(
@@ -139,3 +152,156 @@ class PasswordResetConfirmView(APIView):
         user.set_password(serializer.validated_data['new_password'])
         user.save()
         return Response({'detail': 'Password has been reset successfully.'}, status=status.HTTP_200_OK)
+
+
+class ForgotPasswordRequestView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ForgotPasswordThrottle]
+
+    def post(self, request):
+        serializer = ForgotPasswordRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        tenant_id = ThreadVaribales().get_current_tenant_id()
+
+        try:
+            tenant_user = TenantUser.objects.select_related('user').get(
+                tenant_id=tenant_id,
+                user__email=email,
+                is_active=True,
+            )
+            user = tenant_user.user
+
+            PasswordResetOTP.objects.filter(
+                user=user, tenant_id=tenant_id, is_used=False,
+            ).update(is_used=True)
+
+            otp_value = f"{random.SystemRandom().randint(0, 999999):06d}"
+            expires_at = timezone.now() + timedelta(minutes=10)
+
+            PasswordResetOTP.objects.create(
+                user=user,
+                tenant_id=tenant_id,
+                otp=otp_value,
+                expires_at=expires_at,
+            )
+
+            send_mail(
+                subject='Your ShopStack password reset code',
+                message=f'Your OTP is: {otp_value}\nIt expires in 10 minutes.',
+                from_email='guruprasad1704@gmail.com',
+                recipient_list=[email],
+                fail_silently=True,
+            )
+        except TenantUser.DoesNotExist:
+            pass
+
+        return Response(
+            {'detail': 'If that email address is registered, an OTP has been sent.'},
+            status=status.HTTP_200_OK,
+        )
+
+
+class ForgotPasswordVerifyView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ForgotPasswordThrottle]
+
+    def post(self, request):
+        serializer = ForgotPasswordVerifySerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data['email']
+        otp_input = serializer.validated_data['otp']
+        tenant_id = ThreadVaribales().get_current_tenant_id()
+
+        try:
+            tenant_user = TenantUser.objects.select_related('user').get(
+                tenant_id=tenant_id,
+                user__email=email,
+                is_active=True,
+            )
+            user = tenant_user.user
+        except TenantUser.DoesNotExist:
+            return Response(
+                {'detail': 'Invalid email or OTP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            otp_record = PasswordResetOTP.objects.filter(
+                user=user,
+                tenant_id=tenant_id,
+                is_used=False,
+            ).latest('created_at')
+        except PasswordResetOTP.DoesNotExist:
+            return Response(
+                {'detail': 'Invalid email or OTP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_record.attempt_count >= 3:
+            return Response(
+                {'detail': 'Too many incorrect attempts. Please request a new OTP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_record.is_expired():
+            return Response(
+                {'detail': 'OTP has expired. Please request a new one.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_record.otp != otp_input:
+            otp_record.attempt_count += 1
+            otp_record.save(update_fields=['attempt_count'])
+            return Response(
+                {'detail': 'Invalid email or OTP.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        reset_token = uuid.uuid4().hex
+        otp_record.is_otp_verified = True
+        otp_record.reset_token = reset_token
+        otp_record.save(update_fields=['is_otp_verified', 'reset_token'])
+
+        return Response({'reset_token': reset_token}, status=status.HTTP_200_OK)
+
+
+class ForgotPasswordConfirmView(APIView):
+    permission_classes = [AllowAny]
+    throttle_classes = [ForgotPasswordThrottle]
+
+    def post(self, request):
+        serializer = ForgotPasswordConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        reset_token = serializer.validated_data['reset_token']
+        new_password = serializer.validated_data['new_password']
+
+        try:
+            otp_record = PasswordResetOTP.objects.select_related('user').get(
+                reset_token=reset_token,
+                is_otp_verified=True,
+                is_used=False,
+            )
+        except PasswordResetOTP.DoesNotExist:
+            return Response(
+                {'detail': 'Invalid or expired reset token.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        if otp_record.is_expired():
+            return Response(
+                {'detail': 'Reset token has expired. Please start over.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        user = otp_record.user
+        user.set_password(new_password)
+        user.save()
+
+        otp_record.is_used = True
+        otp_record.save(update_fields=['is_used'])
+
+        return Response(
+            {'detail': 'Password has been reset successfully.'},
+            status=status.HTTP_200_OK,
+        )

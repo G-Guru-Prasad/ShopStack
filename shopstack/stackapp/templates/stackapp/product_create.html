@@ -1,0 +1,129 @@
+{% extends "stackapp/base.html" %}
+{% load static %}
+
+{% block title %}Create Product — ShopStack{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 16px;">
+  <h5 class="teal-text text-darken-2">
+    <i class="material-icons left">add_box</i>Create Product
+  </h5>
+</div>
+
+<form id="product-form" novalidate>
+  {% csrf_token %}
+
+  <div class="row">
+    <!-- Left column: Product details -->
+    <div class="col s12 m8">
+      <div class="card z-depth-1">
+        <div class="card-content">
+          <span class="card-title">Product Details</span>
+
+          <div class="row" style="margin-bottom:0;">
+            <div class="input-field col s12">
+              <input id="product-name" type="text" required>
+              <label for="product-name">Product Name *</label>
+              <span class="helper-text red-text" id="product-name-error"></span>
+            </div>
+          </div>
+
+          <div class="row" style="margin-bottom:0;">
+            <div class="input-field col s12">
+              <textarea id="product-description" class="materialize-textarea"></textarea>
+              <label for="product-description">Description</label>
+            </div>
+          </div>
+
+          <div class="row" style="margin-bottom:0;">
+            <div class="input-field col s6">
+              <input id="product-price" type="number" step="0.01" min="0" required>
+              <label for="product-price">Price *</label>
+              <span class="helper-text red-text" id="product-price-error"></span>
+            </div>
+            <div class="col s6" style="padding-top: 20px;">
+              <label>
+                <input id="product-active" type="checkbox" checked>
+                <span>Active</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right column: Category -->
+    <div class="col s12 m4">
+      <div class="card z-depth-1">
+        <div class="card-content">
+          <span class="card-title">Category</span>
+
+          <div class="row" style="margin-bottom:0;">
+            <div class="input-field col s12">
+              <select id="category-select">
+                <option value="" disabled selected>Select category</option>
+                <option value="__new__">+ Create New Category</option>
+              </select>
+              <label>Category</label>
+            </div>
+          </div>
+
+          <!-- New category fields (hidden by default) -->
+          <div id="new-category-fields" style="display:none;">
+            <div class="row" style="margin-bottom:0;">
+              <div class="input-field col s12">
+                <input id="new-cat-name" type="text">
+                <label for="new-cat-name">Category Name *</label>
+                <span class="helper-text red-text" id="new-cat-name-error"></span>
+              </div>
+            </div>
+            <div class="row" style="margin-bottom:0;">
+              <div class="input-field col s12">
+                <input id="new-cat-description" type="text">
+                <label for="new-cat-description">Category Description</label>
+              </div>
+            </div>
+            <div class="row" style="margin-bottom:0;">
+              <div class="input-field col s12">
+                <select id="new-cat-parent">
+                  <option value="" selected>None (top-level)</option>
+                </select>
+                <label>Parent Category</label>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Variants section -->
+  <div class="card z-depth-1">
+    <div class="card-content">
+      <span class="card-title">
+        Variants <small class="grey-text">(optional)</small>
+      </span>
+
+      <div id="variants-container"></div>
+
+      <div style="margin-top: 12px;">
+        <a id="add-variant-btn" class="btn-flat teal-text text-darken-2 waves-effect">
+          <i class="material-icons left">add</i>Add Variant
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Submit -->
+  <div style="margin-top: 16px; margin-bottom: 32px;">
+    <button id="submit-btn" class="btn teal darken-2 waves-effect waves-light" type="submit">
+      <i class="material-icons left">save</i>Create Product
+    </button>
+    <a href="/products/" class="btn-flat waves-effect" style="margin-left: 8px;">Cancel</a>
+  </div>
+</form>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'stackapp/js/product_create.js' %}"></script>
+{% endblock %}

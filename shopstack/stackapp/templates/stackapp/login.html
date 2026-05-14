@@ -41,6 +41,22 @@
     }
     .btn-login { width: 100%; margin-top: 8px; }
     #error-msg { min-height: 20px; }
+    #fp-link {
+      cursor: pointer;
+      color: #00695c;
+      font-size: 0.85rem;
+      text-decoration: underline;
+      margin-top: 8px;
+      display: inline-block;
+    }
+    #fp-back-login, #fp-back-step1 {
+      cursor: pointer;
+      color: #78909c;
+      font-size: 0.85rem;
+      text-decoration: underline;
+      margin-top: 8px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
@@ -76,6 +92,44 @@
         </button>
 
       </form>
+
+      <p><a id="fp-link">Forgot Password?</a></p>
+
+      <div id="fp-panel" style="display:none;">
+
+        <!-- Step 1: Email -->
+        <div id="fp-step-1" style="display:none;">
+          <p class="card-title" style="font-size:1.2rem;">Reset Password</p>
+          <p class="brand-sub">Enter your account email to receive an OTP.</p>
+          <div class="input-field">
+            <input id="fp-email" type="email" autocomplete="email">
+            <label for="fp-email">Email Address</label>
+          </div>
+          <p id="fp-step1-error" class="red-text" style="display:none;" aria-live="polite"></p>
+          <button id="fp-send-btn" type="button"
+                  class="btn teal darken-2 waves-effect waves-light btn-login">
+            Send OTP
+          </button>
+          <p><a id="fp-back-login">Back to Sign In</a></p>
+        </div>
+
+        <!-- Step 2: OTP -->
+        <div id="fp-step-2" style="display:none;">
+          <p class="card-title" style="font-size:1.2rem;">Enter OTP</p>
+          <p class="brand-sub">Check your email for a 6-digit code (valid 10 minutes).</p>
+          <div class="input-field">
+            <input id="fp-otp" type="text" maxlength="6" inputmode="numeric" autocomplete="one-time-code">
+            <label for="fp-otp">6-digit OTP</label>
+          </div>
+          <p id="fp-step2-error" class="red-text" style="display:none;" aria-live="polite"></p>
+          <button id="fp-verify-btn" type="button"
+                  class="btn teal darken-2 waves-effect waves-light btn-login">
+            Verify OTP
+          </button>
+          <p><a id="fp-back-step1">Back</a></p>
+        </div>
+
+      </div>
     </div>
   </div>
 

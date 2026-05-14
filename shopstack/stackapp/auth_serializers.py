@@ -48,6 +48,7 @@ class TenantTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         tenant_id = ThreadVaribales().get_current_tenant_id()
+        print('tenant_id', tenant_id, self.user)
         if not TenantUser.objects.filter(
             tenant_id=tenant_id, user=self.user, is_active=True
         ).exists():
@@ -91,6 +92,29 @@ class PasswordResetRequestSerializer(serializers.Serializer):
 class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, min_length=8)
+    new_password_confirm = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs['new_password'] != attrs['new_password_confirm']:
+            raise serializers.ValidationError(
+                {"new_password_confirm": "Passwords do not match."}
+            )
+        validate_password(attrs['new_password'])
+        return attrs
+
+
+class ForgotPasswordRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ForgotPasswordVerifySerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    otp = serializers.CharField(min_length=6, max_length=6)
+
+
+class ForgotPasswordConfirmSerializer(serializers.Serializer):
+    reset_token = serializers.CharField()
     new_password = serializers.CharField(write_only=True, min_length=8)
     new_password_confirm = serializers.CharField(write_only=True)
 
