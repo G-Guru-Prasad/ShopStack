@@ -5,7 +5,7 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  Coverage-CI:
     runs-on: ubuntu-latest
     services:
       postgres:
