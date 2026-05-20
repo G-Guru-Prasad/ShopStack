@@ -7,7 +7,7 @@
           {
             "type": "agent",
             "if": "Bash(git commit*)",
-            "prompt": "A git commit is about to run. Review the staged changes (`git diff --cached`) using the ShopStack code-change-reviewer agent's standards: multi-tenancy safety, code structure, PEP8, docstyle, import order, flake8 concerns, and mandatory test-scenario discussion. If the verdict is CHANGES_REQUIRED, block the commit by responding with decision \"block\" and a reason summarizing the blockers. Otherwise allow it. Tool input: $ARGUMENTS",
+            "prompt": "A git commit is about to run in the ShopStack repo. Review the staged changes by running `git diff --cached` (and `git diff` for any unstaged context), applying the standards in .claude/agents/code-change-reviewer.md (multi-tenancy safety, structure, PEP8, docstyle, import order, flake8) and discussing test scenarios. Then return your decision as JSON on stdout in this exact shape — and nothing else after the JSON:\n\nIf the verdict is CHANGES_REQUIRED, output:\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"<one-paragraph summary of blockers + actionable fixes>\"}}\n\nOtherwise (APPROVED or APPROVED_WITH_NITS), output:\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\"},\"systemMessage\":\"<one-line review summary, including any nits or required follow-up tests>\"}\n\nTool input that triggered this hook: $ARGUMENTS",
             "timeout": 180,
             "statusMessage": "Reviewing staged changes before commit..."
           }
