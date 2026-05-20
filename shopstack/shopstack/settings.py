@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
+import os
 from datetime import timedelta
 from pathlib import Path
 
@@ -90,11 +91,11 @@ WSGI_APPLICATION = 'shopstack.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'shopstack_db',
-        'HOST': 'localhost',
-        'PASSWORD': 'password',
-        'PORT': '5432',
-        'USER': 'postgres'
+        'NAME': os.environ.get('DB_NAME', 'shopstack_db'),
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'password'),
     }
 }
 
