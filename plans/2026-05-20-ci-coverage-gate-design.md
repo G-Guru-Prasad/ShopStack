@@ -53,7 +53,9 @@ source = .
 branch = False
 omit =
     */migrations/*
+    */test_*.py
     */tests.py
+    */tests_*.py
     */settings.py
     */wsgi.py
     */asgi.py
