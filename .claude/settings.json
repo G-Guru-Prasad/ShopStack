@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "if": "Bash(git commit*)",
+            "prompt": "A git commit is about to run. Review the staged changes (`git diff --cached`) using the ShopStack code-change-reviewer agent's standards: multi-tenancy safety, code structure, PEP8, docstyle, import order, flake8 concerns, and mandatory test-scenario discussion. If the verdict is CHANGES_REQUIRED, block the commit by responding with decision \"block\" and a reason summarizing the blockers. Otherwise allow it. Tool input: $ARGUMENTS",
+            "timeout": 180,
+            "statusMessage": "Reviewing staged changes before commit..."
+          }
+        ]
+      }
+    ]
+  }
+}

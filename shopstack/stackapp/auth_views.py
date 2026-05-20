@@ -74,7 +74,7 @@ class LogoutView(APIView):
                 {'detail': 'Invalid or already blacklisted token.'},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_200_OK)
+        return Response({'detail': 'Successfully logged out.'}, status=status.HTTP_200_OK) 
 
 
 class ChangePasswordView(APIView):
