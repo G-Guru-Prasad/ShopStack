@@ -12,7 +12,7 @@ def onemore_covered_function():
 
 def yet_another_covered_function():
     """Another function that is covered by tests."""
-    return 'this should also be covered by tests'
+    return 'this should also be covered by tests' 
 
 
 # def sandbox_only_for_gate_test():
