@@ -1,0 +1,40 @@
+Measured: 2026-05-20
+Branch:   add-ci-coverage-gate
+Commit:   f4d3d97 (Read DB credentials from env vars with local defaults)
+
+Raw TOTAL: 94.8%
+Statements: 826  Missed: 43
+
+Baseline integer (floor): 94
+
+Command:
+    cd shopstack
+    coverage erase
+    coverage run manage.py test --keepdb
+    coverage report
+
+Notes:
+- Measured locally on Python 3.9 + Django 4.2 inside ~/genv. CI runs on
+  Python 3.12 + the pinned Django from requirements.txt; the percentage
+  may shift by a fraction of a point. The 0.8% headroom (94.8 -> floor 94)
+  absorbs that drift.
+- Excludes: */migrations/*, */test_*.py, */tests.py, */tests_*.py,
+  */settings.py, */wsgi.py, */asgi.py, */__init__.py, manage.py.
+- Per-file numbers at measurement time:
+    shopstack/urls.py                 100.0%
+    stackapp/admin.py                 100.0%
+    stackapp/apps.py                  100.0%
+    stackapp/auth_serializers.py      100.0%
+    stackapp/auth_urls.py             100.0%
+    stackapp/auth_views.py             98.8%
+    stackapp/constants.py               0.0%
+    stackapp/middleware.py             92.9%
+    stackapp/models.py                 91.8%
+    stackapp/page_urls.py             100.0%
+    stackapp/page_views.py            100.0%
+    stackapp/permissions.py            83.3%
+    stackapp/serializers.py           100.0%
+    stackapp/throttles.py             100.0%
+    stackapp/urls.py                  100.0%
+    stackapp/utils.py                 100.0%
+    stackapp/views.py                  87.4%
