@@ -851,3 +851,4 @@ class CreatedByAuditTest(APITestBase):
         payment = Payment.objects.get(pk=pay_resp.json()['id'])
         self.assertIsNotNone(payment.created_by)
         self.assertEqual(payment.created_by_id, self.user.id)
+        self.assertTrue(False)
