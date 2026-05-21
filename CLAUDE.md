@@ -104,3 +104,12 @@ Views read `user_id` and `tenant_id` directly from `ThreadVaribales()` — they 
 - Make sure all the test cases running uses a different test database
 - All test cases should have asserts to make sure data integrity
 - All test case running command should use keepdb always unless, there's model field change
+
+### CI Coverage Gate
+
+- Every PR to `main` runs `.github/workflows/ci.yml`, which executes the Django test suite under `coverage.py` and enforces a fixed coverage floor (currently `--fail-under=94`).
+- The floor is hardcoded in the workflow file. To raise it, open a PR that edits the integer — reviewed like any other change.
+- The current baseline rationale (raw percentage, command, per-file numbers at measurement time) is recorded in `plans/2026-05-20-ci-baseline.txt`.
+- Coverage configuration lives in `shopstack/.coveragerc`. Migrations, settings, wsgi/asgi/manage entry points, and `test*.py` files are excluded so they neither help nor hurt the percentage.
+- New apps added under `shopstack/` are picked up automatically — `source = .` in the rcfile is a directory, not a file list.
+- Direct pushes / force pushes to `main` are blocked by branch protection; all changes must arrive via PR with a passing `ci / test` check.
