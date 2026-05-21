@@ -63,10 +63,14 @@ Blank line between groups. Alphabetical within group. No wildcard imports (`from
 
 Output exactly one paragraph in **plain text only**. No JSON, no markdown, no code fences, no preamble, no appendix, no horizontal rules, no follow-up sections, no test-scenario discussion, no recommendations beyond what fits inside the one paragraph.
 
-**Exact format** — a single line in this shape and nothing else:
+**List only the pillars that FAIL.** Do not mention passing pillars at all. Order failures by pillar priority (naming, lint, docstyle, imports, PEP8).
 
-`Pillar status — naming: <pass|fail: reason>; lint: <pass|fail: reason>; docstyle: <pass|fail: reason>; imports: <pass|fail: reason>; PEP8: <pass|fail: reason>. <one-line verdict>`
+**Exact format when one or more pillars fail** — a single line in this shape and nothing else:
 
-For each failing pillar, include the offending identifier or `file:line` reference and the specific rule (e.g. `F841`, `E225`, `wildcard import`). If all five pillars pass, output exactly: `All pillars pass. No structural issues in the staged diff.`
+`Pillar status — <failing pillar>: <reason>; <next failing pillar>: <reason>; … <one-line verdict>`
 
-Anything beyond this single paragraph — including `---` separators, headers, lists, or supplemental sections — is a violation of the output contract.
+For each failing pillar, include the offending identifier or `file:line` reference and the specific rule (e.g. `F841`, `E225`, `wildcard import`).
+
+**When all five pillars pass**, output exactly: `All pillars pass. No structural issues in the staged diff.`
+
+Anything beyond this single paragraph — including `---` separators, headers, lists, supplemental sections, or any mention of passing pillars — is a violation of the output contract.
