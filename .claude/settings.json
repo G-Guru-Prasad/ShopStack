@@ -10,11 +10,11 @@
             "command": "python3 -c \"import json,sys,datetime,os; d=json.load(sys.stdin); cmd=d.get('tool_input',{}).get('command',''); os.makedirs('.claude',exist_ok=True); open('.claude/hook-log.txt','a').write(datetime.datetime.now().isoformat()+'\\tPreToolUse\\t'+cmd[:500]+'\\n')\" 2>/dev/null || true"
           },
           {
-            "type": "agent",
+            "type": "command",
             "if": "Bash(git commit*)",
-            "prompt": "A git commit is about to run in the ShopStack repo. Review the staged changes by running `git diff --cached`, applying the standards in .claude/agents/code-structure-reviewer.md — enforcing these five pillars in priority order: (1) naming & cohesion, (2) lint (flake8 ruleset: F401, F841, F811, F821, C901, E/W), (3) docstyle, (4) import order, (5) PEP8 spacing. Do NOT gate on multi-tenancy safety, ORM correctness, transactional integrity, or test coverage — those are out of scope for this hook. Then return your decision as JSON on stdout in this exact shape — and nothing else after the JSON:\n\nIf the verdict is CHANGES_REQUIRED, output:\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"<one-paragraph summary of blockers + actionable fixes>\"}}\n\nOtherwise (APPROVED or APPROVED_WITH_NITS), output:\n{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"allow\"},\"systemMessage\":\"<one-line review summary>\"}\n\nTool input that triggered this hook: $ARGUMENTS",
+            "command": "bash .claude/hooks/structure-review.sh",
             "timeout": 180,
-            "statusMessage": "Reviewing staged changes before commit..."
+            "statusMessage": "Running advisory structure review..."
           }
         ]
       }
