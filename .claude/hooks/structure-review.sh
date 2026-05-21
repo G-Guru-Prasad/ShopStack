@@ -26,8 +26,14 @@ print(json.dumps({
 REPO_ROOT="$(git rev-parse --show-toplevel 2>/dev/null)" || emit "Structure review skipped — not inside a git repo."
 cd "$REPO_ROOT" || emit "Structure review skipped — could not cd to repo root."
 
+# Prefer the staged diff. If empty, fall back to the working-tree diff vs HEAD
+# — covers compound commands like `git add X && git commit ...` where the
+# PreToolUse hook fires before `git add` has run, so nothing is staged yet.
 DIFF="$(git diff --cached 2>/dev/null)" || emit "Structure review failed: git diff --cached errored."
-[ -z "$DIFF" ] && emit "Structure review skipped — no staged changes."
+if [ -z "$DIFF" ]; then
+    DIFF="$(git diff HEAD 2>/dev/null)" || true
+fi
+[ -z "$DIFF" ] && emit "Structure review skipped — no staged or unstaged changes vs HEAD."
 
 command -v claude >/dev/null 2>&1 || emit "Structure review failed: claude CLI not found on PATH."
 
