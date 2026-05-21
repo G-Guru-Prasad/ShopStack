@@ -63,3 +63,7 @@ jobs:
       - name: Enforce coverage floor
         working-directory: shopstack
         run: coverage report --fail-under=94
+      
+      - name: Test Part
+          working-directory: shopstack
+          run: python manage.py test
