@@ -9,7 +9,10 @@ Whenever a plan is derived, the detailed plan should be written/updated to respe
 
 ## Git Commits
 
-Whenever a git commit command is issued, the commit message should have only the summary line (no description or bullet points or co-authored by).
+Whenever a git commit command is issued, the commit message should have only the summary line (no description or bullet points or co-authored by).  No special characters should be used in the commit message. The commit message should be concise and descriptive of the change being made. For example:
+
+```git commit -m "Fix bug in order placement logic that caused incorrect total_amount calculation"
+```
 
 
 ## Development Commands
