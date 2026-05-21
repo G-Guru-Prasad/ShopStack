@@ -65,5 +65,5 @@ jobs:
         run: coverage report --fail-under=94
       
       - name: Test Part
-          working-directory: shopstack
-          run: python manage.py test
+        working-directory: shopstack
+        run: python manage.py test
