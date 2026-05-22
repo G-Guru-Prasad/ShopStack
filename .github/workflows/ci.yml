@@ -44,11 +44,11 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Run tests under coverage
+      - name: Run Unit Tests
         working-directory: shopstack
         run: coverage run manage.py test
 
-      - name: Emit coverage XML (always)
+      - name: Emit coverage XML
         if: always()
         working-directory: shopstack
         run: coverage xml -o ../coverage.xml || true
