@@ -25,7 +25,7 @@ jobs:
     env:
       DB_NAME: shopstack_test_db
       DB_HOST: localhost
-      DB_PORT: '5432'
+      DB_PORT: "5432"
       DB_USER: postgres
       DB_PASSWORD: postgres
 
@@ -35,7 +35,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: "3.12"
           cache: pip
 
       - name: Install dependencies
@@ -44,11 +44,11 @@ jobs:
           pip install -r requirements.txt
           pip install -r requirements-dev.txt
 
-      - name: Run tests under coverage
+      - name: Run Unit Tests
         working-directory: shopstack
         run: coverage run manage.py test
 
-      - name: Emit coverage XML (always)
+      - name: Emit coverage XML
         if: always()
         working-directory: shopstack
         run: coverage xml -o ../coverage.xml || true
