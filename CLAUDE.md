@@ -2,10 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Plan Mode
-
-Whenever a plan is derived, the detailed plan should be written/updated to respective files under plans folder inside the repository. For example, the plan for the pre-commit hook update described above should be written to `plans/precommit-structure-reviewer-plan.md`.
-
 
 ## Git Commits
 
@@ -116,3 +112,8 @@ Views read `user_id` and `tenant_id` directly from `ThreadVaribales()` — they 
 - Coverage configuration lives in `shopstack/.coveragerc`. Migrations, settings, wsgi/asgi/manage entry points, and `test*.py` files are excluded so they neither help nor hurt the percentage.
 - New apps added under `shopstack/` are picked up automatically — `source = .` in the rcfile is a directory, not a file list.
 - Direct pushes / force pushes to `main` are blocked by branch protection; all changes must arrive via PR with a passing `ci / test` check.
+
+
+### Plan Mode
+
+Whenever a plan is derived, the detailed plan should be written/updated to the corresponding file under the `plans/` folder automatically at the end of the planning session, before the user is asked to approve execution. For example, the plan for the pre-commit hook update described above should be written to `plans/precommit-structure-reviewer-plan.md` automatically at the end of planning, before execution is requested.
