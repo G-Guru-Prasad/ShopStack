@@ -100,7 +100,12 @@ REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
 gh api --method POST \
   "repos/${REPO}/pulls/${PR_NUM}/reviews" \
   --input /tmp/pr-review-payload.json
+
+# Clean up the payload so the next review session starts from a blank file.
+rm -f /tmp/pr-review-payload.json
 ```
+
+The `rm -f` runs unconditionally — even on a failed POST — because a stale payload from a previous run is the most common source of cross-session leakage. If you need to inspect the payload after a failed submission, copy it aside *before* re-running the skill.
 
 ### Summary body format (Markdown)
 
