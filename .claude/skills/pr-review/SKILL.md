@@ -66,20 +66,28 @@ Assign exactly one severity and one dimension per finding. If nothing is wrong, 
 
 ## Step 4 — Post the review
 
-Build the JSON payload with a heredoc so multi-line bodies survive shell quoting, then POST it as a single review:
+Generate the JSON payload from the findings produced in step 3 (do **not** copy the schema below verbatim — substitute the real summary body, real `comments[]`, and the real `headRefOid` captured in step 2). Use the `Write` tool to emit `/tmp/pr-review-payload.json` so multi-line comment bodies survive shell quoting, then POST it as a single review:
+
+```jsonc
+// Shape of /tmp/pr-review-payload.json — fill in from step 3 analysis.
+{
+  "event": "COMMENT",
+  "commit_id": "<headRefOid from step 2>",   // pins comments to the reviewed SHA
+  "body": "<summary markdown built per the format below>",
+  "comments": [
+    // one entry per line-anchored finding; omit the array if there are none
+    { "path": "<repo-relative path>",
+      "line": <RIGHT-side line number, or LEFT-side for deletions>,
+      "side": "RIGHT",                       // use "LEFT" for findings on removed lines
+      "body": "[<severity>] (<dimension>) ..." }
+  ]
+}
+```
+
+`commit_id` is required — without it, comments anchor to the latest PR head at submit time, so a force-push between steps 2 and 4 will shift line numbers or reject the comments.
 
 ```bash
 REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
-
-cat > /tmp/pr-review-payload.json <<'JSON'
-{
-  "event": "COMMENT",
-  "body": "<summary markdown>",
-  "comments": [
-    { "path": "...", "line": 42, "side": "RIGHT", "body": "[Critical] (Quality) ..." }
-  ]
-}
-JSON
 
 gh api --method POST \
   "repos/${REPO}/pulls/${PR_NUM}/reviews" \
