@@ -5,7 +5,7 @@ description: Review an open GitHub pull request for code quality, structure, and
 
 # PR Review Skill
 
-Advisory PR reviewer for ShopStack. Diffs an open GitHub PR, evaluates each changed hunk along three axes (code quality, structure, performance), and posts findings back to the PR as line-anchored inline comments plus one summary comment. Severity is one of **Critical**, **Warning**, **Suggestion**. Never blocks merge — always submits the review with `event: "COMMENT"`.
+PR reviewer for ShopStack. Diffs an open GitHub PR, evaluates each changed hunk along three axes (code quality, structure, performance), and posts findings back to the PR as line-anchored inline comments plus one summary comment. Severity is one of **Critical**, **Warning**, **Suggestion**. Submits the review with `event: "REQUEST_CHANGES"` when one or more Critical findings exist, otherwise `event: "COMMENT"`. Never approves.
 
 ## Invocation
 
@@ -71,7 +71,7 @@ Generate the JSON payload from the findings produced in step 3 (do **not** copy 
 ```jsonc
 // Shape of /tmp/pr-review-payload.json — fill in from step 3 analysis.
 {
-  "event": "COMMENT",
+  "event": "REQUEST_CHANGES",                // use "COMMENT" when Critical count is 0
   "commit_id": "<headRefOid from step 2>",   // pins comments to the reviewed SHA
   "body": "<summary markdown built per the format below>",
   "comments": [
@@ -85,6 +85,14 @@ Generate the JSON payload from the findings produced in step 3 (do **not** copy 
 ```
 
 `commit_id` is required — without it, comments anchor to the latest PR head at submit time, so a force-push between steps 2 and 4 will shift line numbers or reject the comments.
+
+**Pick `event` from the Critical count produced in step 3:**
+
+- `Critical >= 1` → `"REQUEST_CHANGES"`
+- `Critical == 0` → `"COMMENT"`
+- Never `"APPROVE"`.
+
+GitHub forbids `REQUEST_CHANGES` on your own PR. If the PR author equals the authenticated `gh` user (compare `author.login` from step 2 against `gh api user -q .login`), downgrade to `"COMMENT"` and prepend a line to the summary body: `> Critical findings present, but cannot REQUEST_CHANGES on own PR — posting as COMMENT.`
 
 ```bash
 REPO="$(gh repo view --json nameWithOwner -q .nameWithOwner)"
@@ -124,7 +132,7 @@ PR #<N>: posted review
 
 ## Guardrails
 
-- Always submit with `event: "COMMENT"`. Never `REQUEST_CHANGES`, never `APPROVE`.
+- Submit with `event: "REQUEST_CHANGES"` only when Critical count >= 1; otherwise `event: "COMMENT"`. Never `APPROVE`. Downgrade to `COMMENT` if reviewing your own PR (GitHub rejects self-requested-changes).
 - Do not run tests, lint, or coverage — CI handles those.
 - Do not modify code or push commits.
 - Only review one PR per invocation.
