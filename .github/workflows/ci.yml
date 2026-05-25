@@ -60,6 +60,54 @@ jobs:
           name: coverage-xml
           path: coverage.xml
 
+      - name: Upload raw coverage data
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-raw
+          path: shopstack/.coverage
+
       - name: Enforce coverage floor
         working-directory: shopstack
         run: coverage report --fail-under=94
+
+  Code-Audit:
+    runs-on: ubuntu-latest
+    needs: Coverage-CI
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Download raw coverage data
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-raw
+          path: shopstack
+
+      - name: Run codebase auditor
+        run: |
+          python tools/audit.py \
+            --since origin/main \
+            --format both \
+            --coverage-file shopstack/.coverage \
+            --no-fail-fast
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-report
+          path: reports/

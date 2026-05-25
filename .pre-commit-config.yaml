@@ -1,0 +1,9 @@
+repos:
+  - repo: local
+    hooks:
+      - id: shopstack-audit
+        name: ShopStack codebase auditor
+        entry: python tools/audit.py --diff --format both
+        language: system
+        pass_filenames: false
+        stages: [commit]
