@@ -131,13 +131,13 @@ class CartView(APIView):
         return cart
 
     def get(self, request):
-        user_id   = ThreadVaribales().get_val('user_id')
+        user_id = ThreadVaribales().get_val('user_id')
         tenant_id = ThreadVaribales().get_current_tenant_id()
         cart = self._get_or_create_cart(user_id, tenant_id)
         return Response(CartSerializer(cart).data)
 
     def post(self, request):
-        user_id   = ThreadVaribales().get_val('user_id')
+        user_id = ThreadVaribales().get_val('user_id')
         tenant_id = ThreadVaribales().get_current_tenant_id()
         cart = self._get_or_create_cart(user_id, tenant_id)
         return Response(CartSerializer(cart).data, status=status.HTTP_200_OK)
@@ -148,14 +148,14 @@ class CartItemCreateView(generics.CreateAPIView):
     permission_classes = [IsAuthenticated, IsTenantMember]
 
     def perform_create(self, serializer):
-        user_id   = ThreadVaribales().get_val('user_id')
+        user_id = ThreadVaribales().get_val('user_id')
         tenant_id = ThreadVaribales().get_current_tenant_id()
         cart = Cart.objects.filter(user_id=user_id, is_active=True).first()
         serializer.save(cart=cart, tenant_id=tenant_id)
 
 
 class CartItemDetailView(generics.RetrieveUpdateDestroyAPIView):
-    serializer_class  = CartItemSerializer
+    serializer_class = CartItemSerializer
     http_method_names = ['patch', 'delete']
     permission_classes = [IsAuthenticated, IsTenantMember]
 
@@ -174,23 +174,24 @@ class OrderListCreateView(APIView):
         serializer = PlaceOrderSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        user_id   = ThreadVaribales().get_val('user_id')
+        user_id = ThreadVaribales().get_val('user_id')
         tenant_id = ThreadVaribales().get_current_tenant_id()
 
         cart = Cart.objects.filter(user_id=user_id, is_active=True).first()
         if not cart:
             return Response({'detail': 'No active cart found.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cart_items = CartItem.objects.filter(cart=cart).select_related('product_variant__product')
+        cart_items = CartItem.objects.filter(
+            cart=cart).select_related('product_variant__product')
         if not cart_items.exists():
             return Response({'detail': 'Cart is empty.'}, status=status.HTTP_400_BAD_REQUEST)
 
         total = 0
         order_items_data = []
         for item in cart_items:
-            variant    = item.product_variant
+            variant = item.product_variant
             unit_price = variant.product.price + variant.price_modifier
-            total     += unit_price * item.quantity
+            total += unit_price * item.quantity
             order_items_data.append({
                 'product_variant': variant,
                 'quantity':        item.quantity,
@@ -200,11 +201,11 @@ class OrderListCreateView(APIView):
 
         with transaction.atomic():
             order = Order.objects.create(
-                cart_id      = cart.id,
-                address_id   = serializer.validated_data['address_id'],
-                total_amount = total,
-                tenant_id    = tenant_id,
-                status       = Order.Status.PENDING,
+                cart_id=cart.id,
+                address_id=serializer.validated_data['address_id'],
+                total_amount=total,
+                tenant_id=tenant_id,
+                status=Order.Status.PENDING,
             )
             OrderItem.objects.bulk_create([
                 OrderItem(order=order, **item_data)
@@ -239,11 +240,11 @@ class PaymentListCreateView(APIView):
         serializer.is_valid(raise_exception=True)
         data = serializer.validated_data
         payment = Payment.objects.create(
-            order_id     = data['order_id'],
-            amount       = data['amount'],
-            method       = data['method'],
-            reference_id = data.get('reference_id', ''),
-            notes        = data.get('notes', ''),
-            status       = Payment.Status.PENDING,
+            order_id=data['order_id'],
+            amount=data['amount'],
+            method=data['method'],
+            reference_id=data.get('reference_id', ''),
+            notes=data.get('notes', ''),
+            status=Payment.Status.PENDING,
         )
         return Response(PaymentSerializer(payment).data, status=status.HTTP_201_CREATED)

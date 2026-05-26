@@ -21,11 +21,12 @@ from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from stackapp.factories import TenantFactory, TenantUserFactory, UserFactory
 from stackapp.models import (
     Cart, Category, PasswordResetOTP, Product, ProductVariant,
     Tenant, TenantUser,
 )
-from stackapp.utils import ThreadVaribales
+from stackapp.utils import TenantContext, ThreadVaribales
 
 
 # ---------------------------------------------------------------------------
@@ -43,20 +44,20 @@ class AuthTestBase(TestCase):
         # Clear throttle counters between tests
         cache.clear()
 
-        self.tenant = Tenant.objects.create(
-            id='acme', name='Acme Corp', subdomain='acme',
-        )
-        self.user = User.objects.create_user(
+        self.tenant = TenantFactory(id='acme', name='Acme Corp', subdomain='acme')
+        self.user = UserFactory(
             username='testuser', password='TestPass123!', email='test@acme.com',
         )
-        TenantUser.objects.create(tenant=self.tenant, user=self.user)
+        TenantUserFactory(tenant=self.tenant, user=self.user)
 
-        tv = ThreadVaribales()
-        tv.set_val('tenant_id', self.tenant.id)
-        tv.set_val('user_id', self.user.id)
+        self._ctx = TenantContext(tenant_id=self.tenant.id, user_id=self.user.id)
+        self._ctx.__enter__()
 
         self.host = _host('acme')
         self._refresh_tokens()
+
+    def tearDown(self):
+        self._ctx.__exit__(None, None, None)
 
     def _refresh_tokens(self):
         refresh = RefreshToken.for_user(self.user)

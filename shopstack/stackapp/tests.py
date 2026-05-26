@@ -1,52 +1,38 @@
 from decimal import Decimal
 
-from django.contrib.auth.models import User
 from django.test import TestCase
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from stackapp.factories import TenantFactory, TenantUserFactory, UserFactory
 from stackapp.models import (
     Address, Cart, CartItem, Category, Order, OrderItem,
-    Payment, Product, ProductVariant, Tenant, TenantUser,
+    Payment, Product, ProductVariant,
 )
-from stackapp.utils import ThreadVaribales
+from stackapp.utils import TenantContext, ThreadVaribales
 
 
 class APITestBase(TestCase):
     """Base class with common tenant / user / JWT / thread-local setup."""
 
     def setUp(self):
-        self.tenant = Tenant.objects.create(
-            id='acme', name='Acme Corp', subdomain='acme',
-        )
-        self.user = User.objects.create_user(
-            username='testuser', password='testpass',
-        )
-        TenantUser.objects.create(tenant=self.tenant, user=self.user)
+        self.tenant = TenantFactory(
+            id='acme', name='Acme Corp', subdomain='acme')
+        self.user = UserFactory(username='testuser')
+        TenantUserFactory(tenant=self.tenant, user=self.user)
 
-        # Set thread-local so TenantBasedManager works during data setup
-        tv = ThreadVaribales()
-        tv.set_val('tenant_id', self.tenant.id)
-        tv.set_val('user_id', self.user.id)
+        self._ctx = TenantContext(
+            tenant_id=self.tenant.id, user_id=self.user.id)
+        self._ctx.__enter__()
 
         self.host = 'acme.localhost:8000'
 
-        # TenantBasedManager caches tenant_id at class-definition time
-        # (in __init__), so bulk_create's add_tenant_id uses a stale
-        # value. Patch it for all tenant-scoped models used in tests.
-        for model in [Category, Product, ProductVariant, Cart, CartItem,
-                      Address, Order, OrderItem, Payment]:
-            model.objects.tenant_id = self.tenant.id
-
-        # Generate JWT access token for authenticated requests
         refresh = RefreshToken.for_user(self.user)
         self.access_token = str(refresh.access_token)
         self.auth_header = f'Bearer {self.access_token}'
 
-    # ------------------------------------------------------------------
-    # Helpers that inject HTTP_HOST and Authorization header.
-    # Thread-local values are restored after each call because middleware
-    # cleanup wipes them at the end of the request.
-    # ------------------------------------------------------------------
+    def tearDown(self):
+        self._ctx.__exit__(None, None, None)
+
     def _restore_thread_locals(self):
         tv = ThreadVaribales()
         tv.set_val('tenant_id', self.tenant.id)
@@ -851,3 +837,34 @@ class CreatedByAuditTest(APITestBase):
         payment = Payment.objects.get(pk=pay_resp.json()['id'])
         self.assertIsNotNone(payment.created_by)
         self.assertEqual(payment.created_by_id, self.user.id)
+
+
+# ======================================================================
+# Factory smoke test
+# ======================================================================
+class FactorySmokeTest(APITestBase):
+    """Build the full tenant-scoped object graph via factories and assert
+    every row is created under the active tenant with audit fields set."""
+
+    def test_full_graph_via_factories(self):
+        """Test Full Graph Via Factories."""
+        from stackapp.factories import (
+            AddressFactory, CartFactory, CartItemFactory, CategoryFactory,
+            OrderFactory, OrderItemFactory, PaymentFactory, ProductFactory,
+            ProductVariantFactory,
+        )
+        category = CategoryFactory()
+        product = ProductFactory(category=category)
+        variant = ProductVariantFactory(product=product)
+        cart = CartFactory(user=self.user)
+        cart_item = CartItemFactory(cart=cart, product_variant=variant)
+        address = AddressFactory(user=self.user)
+        order = OrderFactory(cart=cart, address=address,
+                             total_amount=Decimal('100.00'))
+        order_item = OrderItemFactory(order=order, product_variant=variant)
+        payment = PaymentFactory(order=order)
+
+        for obj in [category, product, variant, cart, cart_item, address,
+                    order, order_item, payment]:
+            self.assertEqual(obj.tenant_id, self.tenant.id)
+            self.assertEqual(obj.created_by_id, self.user.id)

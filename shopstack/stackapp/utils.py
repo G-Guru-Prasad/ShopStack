@@ -64,8 +64,49 @@ class TenantBasedManager(models.Manager):
 
     def get_queryset(self, *args, **kwargs):
         """Override get queryset method."""
-        
+
         return super().get_queryset(*args, **kwargs).filter(
             tenant_id=ThreadVaribales().get_current_tenant_id(),
             deleted_at__isnull=True,
         )
+
+
+class TenantContext:
+    """Context manager that scopes thread-local tenant_id/user_id for tests.
+
+    Also refreshes the cached `tenant_id` on every TenantBasedManager so
+    bulk_create and other manager-cached paths see the active tenant.
+    """
+
+    def __init__(self, tenant_id, user_id=None):
+        self.tenant_id = tenant_id
+        self.user_id = user_id
+        self._prev_tenant_id = None
+        self._prev_user_id = None
+        self._prev_manager_tenants = {}
+
+    def _tenant_managers(self):
+        from django.apps import apps
+        for model in apps.get_models():
+            manager = getattr(model, 'objects', None)
+            if isinstance(manager, TenantBasedManager):
+                yield model, manager
+
+    def __enter__(self):
+        tv = ThreadVaribales()
+        self._prev_tenant_id = tv.get_val('tenant_id')
+        self._prev_user_id = tv.get_val('user_id')
+        tv.set_val('tenant_id', self.tenant_id)
+        tv.set_val('user_id', self.user_id)
+        for model, manager in self._tenant_managers():
+            self._prev_manager_tenants[model] = manager.tenant_id
+            manager.tenant_id = self.tenant_id
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        tv = ThreadVaribales()
+        tv.set_val('tenant_id', self._prev_tenant_id)
+        tv.set_val('user_id', self._prev_user_id)
+        for model, prev in self._prev_manager_tenants.items():
+            model.objects.tenant_id = prev
+        return False
