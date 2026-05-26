@@ -48,7 +48,6 @@ class TenantTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         data = super().validate(attrs)
         tenant_id = ThreadVaribales().get_current_tenant_id()
-        print('tenant_id', tenant_id, self.user)
         if not TenantUser.objects.filter(
             tenant_id=tenant_id, user=self.user, is_active=True
         ).exists():

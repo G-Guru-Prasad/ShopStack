@@ -14,7 +14,8 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProductVariant
-        fields = ['id', 'name', 'sku', 'price_modifier', 'stock_qty', 'effective_price']
+        fields = ['id', 'name', 'sku', 'price_modifier',
+                  'stock_qty', 'effective_price']
 
     def get_effective_price(self, obj):
         return obj.product.price + obj.price_modifier
@@ -23,7 +24,8 @@ class ProductVariantSerializer(serializers.ModelSerializer):
 class ProductListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'category', 'is_active']
+        fields = ['id', 'name', 'description',
+                  'price', 'category', 'is_active']
 
 
 class ProductDetailSerializer(serializers.ModelSerializer):
@@ -31,7 +33,8 @@ class ProductDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Product
-        fields = ['id', 'name', 'description', 'price', 'category', 'is_active', 'variants']
+        fields = ['id', 'name', 'description', 'price',
+                  'category', 'is_active', 'variants']
 
 
 class CartItemSerializer(serializers.ModelSerializer):
@@ -51,7 +54,8 @@ class CartSerializer(serializers.ModelSerializer):
 class AddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Address
-        fields = ['id', 'user_id', 'line1', 'line2', 'city', 'state', 'country', 'pincode', 'is_default']
+        fields = ['id', 'user_id', 'line1', 'line2', 'city',
+                  'state', 'country', 'pincode', 'is_default']
 
 
 class OrderItemSerializer(serializers.ModelSerializer):
@@ -67,12 +71,13 @@ class OrderListSerializer(serializers.ModelSerializer):
 
 
 class OrderDetailSerializer(serializers.ModelSerializer):
-    items   = OrderItemSerializer(many=True, read_only=True)
+    items = OrderItemSerializer(many=True, read_only=True)
     address = AddressSerializer(read_only=True)
 
     class Meta:
         model = Order
-        fields = ['id', 'cart', 'address', 'status', 'total_amount', 'placed_at', 'items']
+        fields = ['id', 'cart', 'address', 'status',
+                  'total_amount', 'placed_at', 'items']
 
 
 class PlaceOrderSerializer(serializers.Serializer):
@@ -87,15 +92,17 @@ class PlaceOrderSerializer(serializers.Serializer):
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
-        fields = ['id', 'order', 'amount', 'method', 'status', 'reference_id', 'notes', 'paid_at', 'created_at']
+        fields = ['id', 'order', 'amount', 'method', 'status',
+                  'reference_id', 'notes', 'paid_at', 'created_at']
 
 
 class InitiatePaymentSerializer(serializers.Serializer):
-    order_id     = serializers.IntegerField()
-    amount       = serializers.DecimalField(max_digits=14, decimal_places=2)
-    method       = serializers.ChoiceField(choices=Payment.Method.choices)
-    reference_id = serializers.CharField(max_length=255, required=False, allow_blank=True, default='')
-    notes        = serializers.CharField(required=False, allow_blank=True, default='')
+    order_id = serializers.IntegerField()
+    amount = serializers.DecimalField(max_digits=14, decimal_places=2)
+    method = serializers.ChoiceField(choices=Payment.Method.choices)
+    reference_id = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default='')
+    notes = serializers.CharField(required=False, allow_blank=True, default='')
 
     def validate_order_id(self, value):
         if not Order.objects.filter(pk=value).exists():
@@ -105,7 +112,9 @@ class InitiatePaymentSerializer(serializers.Serializer):
     def validate(self, attrs):
         order = Order.objects.get(pk=attrs['order_id'])
         if order.status == Order.Status.CANCELLED:
-            raise serializers.ValidationError("Cannot initiate payment for a cancelled order.")
+            raise serializers.ValidationError(
+                "Cannot initiate payment for a cancelled order.")
         if Payment.objects.filter(order_id=attrs['order_id'], status=Payment.Status.PAID).exists():
-            raise serializers.ValidationError("A confirmed payment already exists for this order.")
+            raise serializers.ValidationError(
+                "A confirmed payment already exists for this order.")
         return attrs

@@ -1,6 +1,10 @@
 from django.contrib import admin
 
-from stackapp.models import Address, Cart, CartItem, Category, Order, OrderItem, Product, ProductVariant, Tenant, TenantUser
+from stackapp.models import (
+    Address, Cart, CartItem, Category,
+    Order, OrderItem, Product, ProductVariant,
+    Tenant, TenantUser
+)
 
 
 @admin.register(Tenant)
