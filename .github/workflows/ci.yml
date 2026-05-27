@@ -62,4 +62,4 @@ jobs:
 
       - name: Enforce coverage floor
         working-directory: shopstack
-        run: coverage report --fail-under=94
+        run: coverage report --fail-under=95

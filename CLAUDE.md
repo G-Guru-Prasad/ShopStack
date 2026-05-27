@@ -103,6 +103,7 @@ Views read `user_id` and `tenant_id` directly from `ThreadVaribales()` — they 
 - Make sure all the test cases running uses a different test database
 - All test cases should have asserts to make sure data integrity
 - All test case running command should use keepdb always unless, there's model field change
+- No test file should have noqa or other coverage ignore comments
 
 ### CI Coverage Gate
 
