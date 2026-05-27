@@ -117,4 +117,11 @@ Views read `user_id` and `tenant_id` directly from `ThreadVaribales()` — they 
 
 ### Plan Mode
 
-Whenever a plan is derived, the detailed plan should be written/updated to the corresponding file under the `plans/` folder automatically at the end of the planning session, before the user is asked to approve execution. For example, the plan for the pre-commit hook update described above should be written to `plans/precommit-structure-reviewer-plan.md` automatically at the end of planning, before execution is requested.
+Whenever a plan is derived, the detailed plan MUST be written/updated to the corresponding file under the `plans/` folder BEFORE the user is asked to approve or execute the plan. The plan file must already exist on disk at the moment the approval prompt is shown — never ask the user to execute a plan that has not yet been persisted to `plans/`.
+
+Workflow:
+1. Derive the plan.
+2. Write/update `plans/<topic>-plan.md` with the full detailed plan.
+3. Only then ask the user to approve execution.
+
+For example, the plan for a pre-commit hook update must be written to `plans/precommit-structure-reviewer-plan.md` first, and only after that file is saved should the user be prompted to execute.
