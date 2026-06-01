@@ -1,0 +1,5 @@
+[
+  "{\"allowed\": true, \"reason\": \"on-topic\"}",
+  "{\"answer\": \"On create, TenantBasedManager injects tenant_id and created_by_id from thread-local storage.\", \"citations\": [1]}",
+  "{\"grounded\": true, \"citations_ok\": true, \"issues\": \"\"}"
+]

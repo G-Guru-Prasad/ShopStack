@@ -1,0 +1,5 @@
+[
+  "{\"allowed\": true, \"reason\": \"on-topic\"}",
+  "{\"answer\": \"TenantMiddleware reads the subdomain from HTTP_HOST and sets tenant_id in thread-local storage.\", \"citations\": [1]}",
+  "{\"grounded\": true, \"citations_ok\": true, \"issues\": \"\"}"
+]
