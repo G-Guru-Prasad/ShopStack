@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'stackapp',
+    'docs_agent',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -157,8 +158,22 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'auth': '10/minute',
         'forgot_password': '10/hour',
+        'docs_agent': '20/minute',
     },
 }
+
+# Docs Q&A agent
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+DOCS_AGENT_TASK_MODEL = os.environ.get('DOCS_AGENT_TASK_MODEL', 'claude-opus-4-8')
+DOCS_AGENT_CLASSIFIER_MODEL = os.environ.get('DOCS_AGENT_CLASSIFIER_MODEL', 'claude-haiku-4-5-20251001')
+DOCS_AGENT_CORPUS_PATHS = [
+    BASE_DIR.parent / 'CLAUDE.md',
+    BASE_DIR.parent / 'docs',
+    BASE_DIR.parent / 'plans',
+    BASE_DIR / 'Notes.md',
+]
+DOCS_AGENT_INDEX_PATH = BASE_DIR / 'docs_agent' / 'index' / 'bm25.pkl'
+DOCS_AGENT_MAX_REVISE_LOOPS = 2
 
 # Security headers
 SECURE_CONTENT_TYPE_NOSNIFF = True

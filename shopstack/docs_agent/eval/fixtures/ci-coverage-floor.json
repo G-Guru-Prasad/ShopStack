@@ -1,0 +1,5 @@
+[
+  "{\"allowed\": true, \"reason\": \"on-topic\"}",
+  "{\"answer\": \"The CI workflow enforces a coverage floor of 94 percent via coverage --fail-under=94.\", \"citations\": [1]}",
+  "{\"grounded\": true, \"citations_ok\": true, \"issues\": \"\"}"
+]

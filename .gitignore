@@ -1,1 +1,5 @@
 .claude/hook-log.txt
+shopstack/docs_agent/index/*.pkl
+__pycache__/
+*.pyc
+.coverage

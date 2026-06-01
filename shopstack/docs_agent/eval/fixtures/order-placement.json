@@ -1,0 +1,5 @@
+[
+  "{\"allowed\": true, \"reason\": \"on-topic\"}",
+  "{\"answer\": \"Order placement uses a snapshot of unit_price on each OrderItem so later price changes don't affect past orders.\", \"citations\": [1]}",
+  "{\"grounded\": true, \"citations_ok\": true, \"issues\": \"\"}"
+]
