@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'stackapp',
+    'doc_agent',
     'rest_framework',
     'rest_framework_simplejwt',
     'rest_framework_simplejwt.token_blacklist',
@@ -166,6 +167,14 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+# doc_agent settings
+DOC_AGENT_CORPUS_DIR = BASE_DIR / 'doc_agent' / 'corpus'
+DOC_AGENT_EMBEDDING_MODEL = 'voyage-3'
+DOC_AGENT_CHAT_MODEL = 'claude-sonnet-4-6'
+DOC_AGENT_EMBEDDING_DIMS = 1024
+ANTHROPIC_API_KEY = os.environ.get('ANTHROPIC_API_KEY', '')
+VOYAGE_API_KEY = os.environ.get('VOYAGE_API_KEY', '')
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
