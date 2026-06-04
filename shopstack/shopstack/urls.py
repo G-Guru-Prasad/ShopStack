@@ -16,9 +16,13 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path
 
+from doc_agent.views import ChatPageView
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('stackapp.urls')),
     path('api/auth/', include('stackapp.auth_urls')),
+    path('api/agent/', include('doc_agent.urls')),
+    path('agent/', ChatPageView.as_view(), name='doc-agent-chat'),
     path('', include('stackapp.page_urls')),
 ]
