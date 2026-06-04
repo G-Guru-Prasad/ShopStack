@@ -2,6 +2,7 @@ import logging
 from dataclasses import asdict
 
 from django.contrib.auth.decorators import login_required
+from django.db.models import Prefetch
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import ensure_csrf_cookie
@@ -12,20 +13,20 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.authentication import JWTAuthentication
 
-from doc_agent.models import Conversation
+from doc_agent.models import Conversation, DocumentChunk
 from doc_agent.orchestrator import Orchestrator
+from doc_agent.serializers import (
+    AskResponseSerializer,
+    AskSerializer,
+    ConversationDetailSerializer,
+    ConversationListSerializer,
+)
 
 
 logger = logging.getLogger(__name__)
 LLM_ERROR_MESSAGE = (
     "I couldn't process that question — the documentation agent is "
     'temporarily unavailable. Please try again.'
-)
-from doc_agent.serializers import (
-    AskResponseSerializer,
-    AskSerializer,
-    ConversationDetailSerializer,
-    ConversationListSerializer,
 )
 
 
@@ -76,9 +77,6 @@ class ConversationDetailView(generics.RetrieveAPIView):
     serializer_class = ConversationDetailSerializer
 
     def get_queryset(self):
-        from django.db.models import Prefetch
-        from doc_agent.models import DocumentChunk
-
         return Conversation.objects.filter(
             user=self.request.user,
         ).prefetch_related(
