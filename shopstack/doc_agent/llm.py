@@ -9,13 +9,17 @@ from django.conf import settings
 
 
 _client = None
+REQUEST_TIMEOUT_SECONDS = 30.0
 
 
 def _get_client():
     global _client
     if _client is None:
         import anthropic
-        _client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        _client = anthropic.Anthropic(
+            api_key=settings.ANTHROPIC_API_KEY,
+            timeout=REQUEST_TIMEOUT_SECONDS,
+        )
     return _client
 
 
@@ -30,6 +34,7 @@ def complete_json(system_prompt, user_prompt, max_tokens=1024):
         max_tokens=max_tokens,
         system=system_prompt,
         messages=[{'role': 'user', 'content': user_prompt}],
+        timeout=REQUEST_TIMEOUT_SECONDS,
     )
     text = ''.join(block.text for block in resp.content if hasattr(block, 'text'))
     text = text.strip()

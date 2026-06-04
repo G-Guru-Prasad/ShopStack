@@ -47,7 +47,7 @@ class MessageSerializer(serializers.ModelSerializer):
                 'source_path': chunk.document.source_path,
                 'snippet': chunk.text[:200],
             }
-            for chunk in obj.cited_chunks.select_related('document').all()
+            for chunk in obj.cited_chunks.all()
         ]
 
 

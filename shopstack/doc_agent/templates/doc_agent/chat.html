@@ -35,6 +35,7 @@
   <section id="main">
     <div id="thread"></div>
     <form id="composer">
+      {% csrf_token %}
       <input id="question" type="text" placeholder="Ask the docs..." required>
       <button type="submit">Send</button>
     </form>

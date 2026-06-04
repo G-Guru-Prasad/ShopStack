@@ -52,6 +52,20 @@ class AskAPITests(TestCase):
         )
         self.assertEqual(resp.status_code, 400)
 
+    def test_malformed_llm_response_returns_502(self):
+        with mock.patch(
+            'doc_agent.views.Orchestrator',
+        ) as orch_cls:
+            orch_cls.return_value.run.side_effect = ValueError('bad json')
+            resp = self.client.post(
+                '/api/agent/ask/',
+                {'question': 'how do I deploy?'},
+                format='json',
+                HTTP_AUTHORIZATION=self.auth_header,
+            )
+        self.assertEqual(resp.status_code, 502)
+        self.assertIn('detail', resp.json())
+
 
 class ConversationAPITests(TestCase):
     def setUp(self):
@@ -109,3 +123,8 @@ class ChatPageViewTests(TestCase):
         resp = self.client.get('/agent/')
         self.assertEqual(resp.status_code, 200)
         self.assertContains(resp, 'Hello')
+
+    def test_csrf_cookie_set_on_chat_page(self):
+        self.client.force_login(self.user)
+        resp = self.client.get('/agent/')
+        self.assertIn('csrftoken', resp.cookies)

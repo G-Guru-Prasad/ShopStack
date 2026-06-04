@@ -1,8 +1,10 @@
+import logging
 from dataclasses import asdict
 
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework import generics, status
 from rest_framework.authentication import SessionAuthentication
 from rest_framework.permissions import IsAuthenticated
@@ -12,6 +14,13 @@ from rest_framework_simplejwt.authentication import JWTAuthentication
 
 from doc_agent.models import Conversation
 from doc_agent.orchestrator import Orchestrator
+
+
+logger = logging.getLogger(__name__)
+LLM_ERROR_MESSAGE = (
+    "I couldn't process that question — the documentation agent is "
+    'temporarily unavailable. Please try again.'
+)
 from doc_agent.serializers import (
     AskResponseSerializer,
     AskSerializer,
@@ -27,11 +36,18 @@ class AskAPIView(APIView):
     def post(self, request):
         serializer = AskSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        response = Orchestrator().run(
-            user=request.user,
-            question=serializer.validated_data['question'],
-            conversation_id=serializer.validated_data.get('conversation_id'),
-        )
+        try:
+            response = Orchestrator().run(
+                user=request.user,
+                question=serializer.validated_data['question'],
+                conversation_id=serializer.validated_data.get('conversation_id'),
+            )
+        except ValueError:
+            logger.exception('LLM returned malformed response')
+            return Response(
+                {'detail': LLM_ERROR_MESSAGE},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
         payload = {
             'message_id': response.message_id,
             'conversation_id': response.conversation_id,
@@ -60,12 +76,21 @@ class ConversationDetailView(generics.RetrieveAPIView):
     serializer_class = ConversationDetailSerializer
 
     def get_queryset(self):
+        from django.db.models import Prefetch
+        from doc_agent.models import DocumentChunk
+
         return Conversation.objects.filter(
             user=self.request.user,
-        ).prefetch_related('messages__cited_chunks__document')
+        ).prefetch_related(
+            Prefetch(
+                'messages__cited_chunks',
+                queryset=DocumentChunk.objects.select_related('document'),
+            ),
+        )
 
 
 @method_decorator(login_required, name='dispatch')
+@method_decorator(ensure_csrf_cookie, name='dispatch')
 class ChatPageView(APIView):
     authentication_classes = [SessionAuthentication]
     permission_classes = [IsAuthenticated]
